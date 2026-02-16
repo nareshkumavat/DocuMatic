@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Play, Copy, Download, RefreshCw, Wand2, Github, Moon, Sun, Monitor, Palette } from "lucide-react"
+import { Play, Copy, Download, RefreshCw, Wand2, Github, Moon, Sun, Monitor, Palette, Edit, Save, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -25,6 +25,10 @@ export default function Page() {
   const [generatedReadme, setGeneratedReadme] = useState("")
   const [loading, setLoading] = useState(false)
   const [mobileTab, setMobileTab] = useState<"input" | "output">("input")
+
+  // Edit Mode State
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedReadme, setEditedReadme] = useState("")
 
   // Theme & Background State
   const { theme, setTheme } = useTheme()
@@ -70,6 +74,8 @@ export default function Page() {
 
     setLoading(true)
     setGeneratedReadme("") // Clear previous
+    setEditedReadme("")
+    setIsEditing(false)
 
     const systemPrompt = `You are a technical writer. Write a README.md for this code.
 Tone: ${tone}.
@@ -164,6 +170,7 @@ Return ONLY Markdown.`
       const cleanMarkdown = responseText.replace(/(\n\s*)*\*\*Generative AI by using Pollinations\*\*.*/gi, "")
         .replace(/^```markdown/, '').replace(/^```/, '').replace(/```$/, '') // specific cleanup
       setGeneratedReadme(cleanMarkdown)
+      setEditedReadme(cleanMarkdown)
       toast.success("Documentation Generated!")
       if (window.innerWidth < 1024) setMobileTab("output")
 
@@ -193,6 +200,24 @@ Return ONLY Markdown.`
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
     toast.success("Downloaded README.md")
+  }
+
+  const handleEditToggle = () => {
+    if (isEditing) {
+      // Cancel Edit
+      setIsEditing(false)
+      setEditedReadme(generatedReadme) // Revert
+    } else {
+      // Start Edit
+      setIsEditing(true)
+      setEditedReadme(generatedReadme)
+    }
+  }
+
+  const handleSaveEdit = () => {
+    setGeneratedReadme(editedReadme)
+    setIsEditing(false)
+    toast.success("Changes saved locally")
   }
 
   if (!mounted) return null
@@ -238,8 +263,6 @@ Return ONLY Markdown.`
             <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             <span className="sr-only">Toggle theme</span>
           </Button>
-
-          {/* Settings Removed as per request */}
 
           <Button
             variant="ghost"
@@ -326,22 +349,50 @@ Return ONLY Markdown.`
         {/* Right Panel: Output */}
         <div className={`flex-1 flex flex-col p-4 md:p-6 gap-4 bg-background/30 border-l border-border/10 backdrop-blur-sm transition-all duration-300 ${mobileTab === "input" ? "hidden lg:flex" : "flex"}`}>
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Preview</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              {isEditing ? "Editing Mode" : "Preview"}
+            </h2>
             <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={copyToClipboard} disabled={!generatedReadme} className="text-muted-foreground hover:text-foreground">
-                <Copy className="w-4 h-4 mr-2" /> Copy
-              </Button>
-              <Button variant="ghost" size="sm" onClick={downloadMarkdown} disabled={!generatedReadme} className="text-muted-foreground hover:text-foreground">
-                <Download className="w-4 h-4 mr-2" /> Download
-              </Button>
+              {generatedReadme && (
+                isEditing ? (
+                  <>
+                    <Button variant="default" size="sm" onClick={handleSaveEdit} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                      <Save className="w-4 h-4 mr-2" /> Save
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={handleEditToggle} className="text-muted-foreground hover:text-foreground">
+                      <X className="w-4 h-4 mr-2" /> Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="text-muted-foreground hover:text-foreground">
+                      <Edit className="w-4 h-4 mr-2" /> Edit
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={copyToClipboard} className="text-muted-foreground hover:text-foreground">
+                      <Copy className="w-4 h-4 mr-2" /> Copy
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={downloadMarkdown} className="text-muted-foreground hover:text-foreground">
+                      <Download className="w-4 h-4 mr-2" /> Download
+                    </Button>
+                  </>
+                )
+              )}
             </div>
           </div>
 
           <div className="flex-1 rounded-xl border border-border/50 bg-background/40 overflow-hidden relative shadow-inner">
             {generatedReadme ? (
-              <div className="absolute inset-0 overflow-auto p-6 prose prose-invert prose-sm max-w-none">
-                <pre className="whitespace-pre-wrap font-sans text-foreground/90">{generatedReadme}</pre>
-              </div>
+              isEditing ? (
+                <Textarea
+                  value={editedReadme}
+                  onChange={(e) => setEditedReadme(e.target.value)}
+                  className="w-full h-full resize-none p-6 font-mono text-sm bg-transparent border-0 focus-visible:ring-0 text-foreground/90 leading-relaxed"
+                />
+              ) : (
+                <div className="absolute inset-0 overflow-auto p-6 prose prose-invert prose-sm max-w-none">
+                  <pre className="whitespace-pre-wrap font-sans text-foreground/90">{generatedReadme}</pre>
+                </div>
+              )
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground space-y-4">
                 <div className="p-4 rounded-full bg-background/50 border border-border/50">
