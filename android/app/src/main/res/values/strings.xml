@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DocuMatic</string>
+    <string name="title_activity_main">DocuMatic</string>
+    <string name="package_name">com.documatic.app</string>
+    <string name="custom_url_scheme">com.documatic.app</string>
+</resources>
