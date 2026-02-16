@@ -6,11 +6,6 @@
 
 ## 🚀 Features
 
-- **Multi-Provider AI Support**:
-  - **OpenRouter** (Recommended)
-  - **Hugging Face** (Free Tier)
-  - **Together AI**
-  - **Google Gemini**
 - **Zero-Config**: "Bring Your Own Key" (BYOK) architecture. Keys are stored securely in your browser's `localStorage`.
 - **Edit Mode**: Modify generated documentation directly in the app before exporting.
 - **Cross-Platform**:
